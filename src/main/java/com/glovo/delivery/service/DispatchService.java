@@ -64,8 +64,9 @@ public class DispatchService {
                 Courier courier = bestCourier.get();
                 assignCourier(order, courier);
             } else {
-                log.warn("No free couriers available for order {}. Order stays in SEARCHING status.",
-                        order.getId());
+                log.warn("No free couriers available for order {}", order.getId());
+                throw new NoCouriersAvailableException(
+                        "No couriers available for order " + order.getId());
             }
         } finally {
             dispatchLock.unlock();
