@@ -56,6 +56,39 @@ class CourierTest {
     }
 
     @Nested
+    @DisplayName("Max weight capacity")
+    class MaxWeightCapacity {
+
+        @Test
+        void pedestrianMaxWeight5kg() {
+            assertEquals(5.0, CourierType.PEDESTRIAN.getMaxWeightKg());
+            assertTrue(CourierType.PEDESTRIAN.canCarry(5.0));
+            assertFalse(CourierType.PEDESTRIAN.canCarry(5.1));
+        }
+
+        @Test
+        void bicycleMaxWeight15kg() {
+            assertEquals(15.0, CourierType.BICYCLE.getMaxWeightKg());
+            assertTrue(CourierType.BICYCLE.canCarry(15.0));
+            assertFalse(CourierType.BICYCLE.canCarry(15.1));
+        }
+
+        @Test
+        void carMaxWeight50kg() {
+            assertEquals(50.0, CourierType.CAR.getMaxWeightKg());
+            assertTrue(CourierType.CAR.canCarry(50.0));
+            assertFalse(CourierType.CAR.canCarry(50.1));
+        }
+
+        @Test
+        void canCarryShouldAcceptLightWeight() {
+            assertTrue(CourierType.PEDESTRIAN.canCarry(0.5));
+            assertTrue(CourierType.BICYCLE.canCarry(0.5));
+            assertTrue(CourierType.CAR.canCarry(0.5));
+        }
+    }
+
+    @Nested
     @DisplayName("Status transitions")
     class StatusTransitions {
 

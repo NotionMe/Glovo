@@ -49,7 +49,7 @@ class DispatchServiceTest {
 
     @BeforeEach
     void setUp() {
-        testOrder = new Order(new Point(50, 50), new Point(60, 60), 5);
+        testOrder = new Order(new Point(50, 50), new Point(60, 60), 5, 3.0);
         testCourier = new Courier(new Point(55, 55), CourierType.BICYCLE);
     }
 

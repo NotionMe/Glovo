@@ -25,7 +25,7 @@ class OrderRepositoryTest {
 
     @Test
     void shouldSaveAndFindById() {
-        Order order = new Order(new Point(10, 20), new Point(30, 40), 5);
+        Order order = new Order(new Point(10, 20), new Point(30, 40), 5, 3.0);
         repository.save(order);
 
         Optional<Order> found = repository.findById(order.getId());
@@ -41,8 +41,8 @@ class OrderRepositoryTest {
 
     @Test
     void shouldFindAll() {
-        Order o1 = new Order(new Point(10, 10), new Point(20, 20), 1);
-        Order o2 = new Order(new Point(30, 30), new Point(40, 40), 3);
+        Order o1 = new Order(new Point(10, 10), new Point(20, 20), 1, 2.0);
+        Order o2 = new Order(new Point(30, 30), new Point(40, 40), 3, 4.0);
         repository.save(o1);
         repository.save(o2);
 
@@ -52,8 +52,8 @@ class OrderRepositoryTest {
 
     @Test
     void shouldFindByStatus() {
-        Order o1 = new Order(new Point(10, 10), new Point(20, 20), 1);
-        Order o2 = new Order(new Point(30, 30), new Point(40, 40), 3);
+        Order o1 = new Order(new Point(10, 10), new Point(20, 20), 1, 2.0);
+        Order o2 = new Order(new Point(30, 30), new Point(40, 40), 3, 4.0);
         o2.setStatus(OrderStatus.ASSIGNED);
         repository.save(o1);
         repository.save(o2);
@@ -69,8 +69,8 @@ class OrderRepositoryTest {
 
     @Test
     void shouldCountByStatus() {
-        Order o1 = new Order(new Point(10, 10), new Point(20, 20), 1);
-        Order o2 = new Order(new Point(30, 30), new Point(40, 40), 3);
+        Order o1 = new Order(new Point(10, 10), new Point(20, 20), 1, 2.0);
+        Order o2 = new Order(new Point(30, 30), new Point(40, 40), 3, 4.0);
         repository.save(o1);
         repository.save(o2);
 
@@ -81,13 +81,13 @@ class OrderRepositoryTest {
     @Test
     void shouldCount() {
         assertEquals(0, repository.count());
-        repository.save(new Order(new Point(10, 10), new Point(20, 20), 1));
+        repository.save(new Order(new Point(10, 10), new Point(20, 20), 1, 2.0));
         assertEquals(1, repository.count());
     }
 
     @Test
     void shouldDeleteById() {
-        Order order = new Order(new Point(10, 10), new Point(20, 20), 1);
+        Order order = new Order(new Point(10, 10), new Point(20, 20), 1, 2.0);
         repository.save(order);
         assertEquals(1, repository.count());
 
@@ -98,8 +98,8 @@ class OrderRepositoryTest {
 
     @Test
     void shouldClear() {
-        repository.save(new Order(new Point(10, 10), new Point(20, 20), 1));
-        repository.save(new Order(new Point(30, 30), new Point(40, 40), 3));
+        repository.save(new Order(new Point(10, 10), new Point(20, 20), 1, 2.0));
+        repository.save(new Order(new Point(30, 30), new Point(40, 40), 3, 4.0));
         assertEquals(2, repository.count());
 
         repository.clear();
@@ -108,7 +108,7 @@ class OrderRepositoryTest {
 
     @Test
     void shouldOverwriteOnSaveWithSameId() {
-        Order order = new Order(new Point(10, 10), new Point(20, 20), 5);
+        Order order = new Order(new Point(10, 10), new Point(20, 20), 5, 3.0);
         repository.save(order);
         order.setStatus(OrderStatus.COMPLETED);
         repository.save(order);

@@ -2,6 +2,7 @@ package com.glovo.delivery.dto;
 
 import com.glovo.delivery.model.Point;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -20,13 +21,17 @@ public class CreateOrderRequest {
     @Max(value = 10, message = "Priority must be at most 10")
     private int priority;
 
+    @DecimalMin(value = "0.01", message = "Weight must be greater than 0")
+    private double weightKg;
+
     public CreateOrderRequest() {
     }
 
-    public CreateOrderRequest(Point pickupLocation, Point deliveryLocation, int priority) {
+    public CreateOrderRequest(Point pickupLocation, Point deliveryLocation, int priority, double weightKg) {
         this.pickupLocation = pickupLocation;
         this.deliveryLocation = deliveryLocation;
         this.priority = priority;
+        this.weightKg = weightKg;
     }
 
     public Point getPickupLocation() {
@@ -51,5 +56,13 @@ public class CreateOrderRequest {
 
     public void setPriority(int priority) {
         this.priority = priority;
+    }
+
+    public double getWeightKg() {
+        return weightKg;
+    }
+
+    public void setWeightKg(double weightKg) {
+        this.weightKg = weightKg;
     }
 }

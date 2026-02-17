@@ -41,7 +41,8 @@ class OrderServiceTest {
         validRequest = new CreateOrderRequest(
                 new Point(10, 20),
                 new Point(80, 90),
-                5
+                5,
+                3.0
         );
     }
 
@@ -64,7 +65,7 @@ class OrderServiceTest {
     @Test
     @DisplayName("getOrder should return order when found")
     void shouldReturnOrderWhenFound() {
-        Order order = new Order(new Point(10, 20), new Point(30, 40), 5);
+        Order order = new Order(new Point(10, 20), new Point(30, 40), 5, 3.0);
         when(orderRepository.findById(order.getId())).thenReturn(Optional.of(order));
 
         Order result = orderService.getOrder(order.getId());
@@ -83,7 +84,7 @@ class OrderServiceTest {
     @Test
     @DisplayName("completeOrder should delegate to dispatchService")
     void shouldCompleteOrder() {
-        Order order = new Order(new Point(10, 20), new Point(30, 40), 5);
+        Order order = new Order(new Point(10, 20), new Point(30, 40), 5, 3.0);
         order.setStatus(OrderStatus.ASSIGNED);
 
         when(orderRepository.findById(order.getId())).thenReturn(Optional.of(order));
@@ -97,7 +98,7 @@ class OrderServiceTest {
     @DisplayName("getAllOrders should delegate to repository")
     void shouldGetAllOrders() {
         when(orderRepository.findAll()).thenReturn(List.of(
-                new Order(new Point(10, 20), new Point(30, 40), 5)
+                new Order(new Point(10, 20), new Point(30, 40), 5, 3.0)
         ));
 
         List<Order> result = orderService.getAllOrders();

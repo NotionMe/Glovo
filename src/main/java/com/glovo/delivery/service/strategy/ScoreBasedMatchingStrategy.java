@@ -28,13 +28,26 @@ public class ScoreBasedMatchingStrategy implements CourierMatchingStrategy {
             return Optional.empty();
         }
 
-        log.info("=== Scoring couriers for order {} (priority={}, pickup={}) ===",
-                order.getId(), order.getPriority(), order.getPickupLocation());
+        // Filter couriers that can carry the order weight
+        List<Courier> eligibleCouriers = availableCouriers.stream()
+                .filter(c -> c.getType().canCarry(order.getWeightKg()))
+                .toList();
+
+        if (eligibleCouriers.isEmpty()) {
+            log.warn("No couriers can carry {}kg for order {} (available: {})",
+                    order.getWeightKg(), order.getId(), availableCouriers.size());
+            return Optional.empty();
+        }
+
+        log.info("=== Scoring couriers for order {} (priority={}, weight={}kg, pickup={}) ===",
+                order.getId(), order.getPriority(), order.getWeightKg(), order.getPickupLocation());
+        log.info("  Eligible couriers: {}/{} (filtered by max weight capacity)",
+                eligibleCouriers.size(), availableCouriers.size());
 
         Courier bestCourier = null;
         double bestScore = Double.MAX_VALUE;
 
-        for (Courier courier : availableCouriers) {
+        for (Courier courier : eligibleCouriers) {
             double distance = courier.getCurrentLocation().distanceTo(order.getPickupLocation());
             double transportWeight = courier.getType().getTransportWeight();
             double score = (distance * transportWeight) - (order.getPriority() * PRIORITY_COEFFICIENT);
