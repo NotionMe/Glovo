@@ -12,10 +12,12 @@ public class Courier {
     private Point currentLocation;
     private CourierType type;
     private CourierStatus status;
+    private int completedOrdersToday;
 
     public Courier() {
         this.id = UUID.randomUUID();
         this.status = CourierStatus.FREE;
+        this.completedOrdersToday = 0;
     }
 
     public Courier(Point currentLocation, CourierType type) {
@@ -56,6 +58,22 @@ public class Courier {
         this.status = status;
     }
 
+    public int getCompletedOrdersToday() {
+        return completedOrdersToday;
+    }
+
+    public void setCompletedOrdersToday(int completedOrdersToday) {
+        this.completedOrdersToday = completedOrdersToday;
+    }
+
+    public void incrementCompletedOrdersToday() {
+        this.completedOrdersToday++;
+    }
+
+    public void resetCompletedOrdersToday() {
+        this.completedOrdersToday = 0;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -72,6 +90,6 @@ public class Courier {
     @Override
     public String toString() {
         return "Courier{id=" + id + ", type=" + type + ", status=" + status +
-                ", location=" + currentLocation + "}";
+                ", location=" + currentLocation + ", completedToday=" + completedOrdersToday + "}";
     }
 }

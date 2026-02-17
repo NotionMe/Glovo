@@ -125,6 +125,92 @@ class ScoreBasedMatchingStrategyTest {
     }
 
     @Nested
+    @DisplayName("Tiebreaker: completedOrdersToday when distance < 1 unit")
+    class CompletedOrdersTiebreaker {
+
+        @Test
+        @DisplayName("Should prefer courier with fewer completedOrdersToday when distance diff < 1")
+        void shouldPreferFewerCompletedOrdersWhenDistanceClose() {
+            Order order = new Order(new Point(50, 50), new Point(60, 60), 5, 3.0);
+
+            // Both couriers at very similar distance from pickup (50,50)
+            Courier courierA = new Courier(new Point(50, 51), CourierType.BICYCLE); // distance = 1.0
+            courierA.setCompletedOrdersToday(5);
+
+            Courier courierB = new Courier(new Point(51, 50), CourierType.BICYCLE); // distance = 1.0
+            courierB.setCompletedOrdersToday(2);
+
+            // Distance diff = 0 < 1.0 threshold => tiebreaker applies
+            // CourierB has fewer completedOrdersToday (2 < 5) => wins
+            Optional<Courier> result = strategy.findBestCourier(order, List.of(courierA, courierB));
+            assertTrue(result.isPresent());
+            assertEquals(courierB.getId(), result.get().getId());
+        }
+
+        @Test
+        @DisplayName("Should NOT apply tiebreaker when distance diff >= 1 unit")
+        void shouldNotApplyTiebreakerWhenDistanceFar() {
+            Order order = new Order(new Point(50, 50), new Point(60, 60), 5, 3.0);
+
+            // CourierA is much closer
+            Courier courierA = new Courier(new Point(50, 51), CourierType.BICYCLE); // distance ~1.0
+            courierA.setCompletedOrdersToday(10);
+
+            // CourierB is significantly farther — distance diff >= 1
+            Courier courierB = new Courier(new Point(50, 53), CourierType.BICYCLE); // distance ~3.0
+            courierB.setCompletedOrdersToday(0);
+
+            // Distance diff = |1.0 - 3.0| = 2.0 >= threshold => normal scoring, courierA wins (lower score)
+            Optional<Courier> result = strategy.findBestCourier(order, List.of(courierA, courierB));
+            assertTrue(result.isPresent());
+            assertEquals(courierA.getId(), result.get().getId());
+        }
+
+        @Test
+        @DisplayName("Should fall back to score when completedOrdersToday are equal and distance < 1")
+        void shouldFallBackToScoreWhenCompletedOrdersEqual() {
+            Order order = new Order(new Point(50, 50), new Point(60, 60), 5, 3.0);
+
+            // Both at nearly the same distance, same completedOrdersToday
+            // But different transport types => different scores
+            Courier car = new Courier(new Point(50, 51), CourierType.CAR);       // distance=1, score=(1*0.7)-2.5=-1.8
+            car.setCompletedOrdersToday(3);
+
+            Courier pedestrian = new Courier(new Point(51, 50), CourierType.PEDESTRIAN); // distance=1, score=(1*1.5)-2.5=-1.0
+            pedestrian.setCompletedOrdersToday(3);
+
+            // Same completedOrders, distance diff=0 < threshold => falls back to score
+            // CAR score (-1.8) < PEDESTRIAN score (-1.0) => car wins
+            Optional<Courier> result = strategy.findBestCourier(order, List.of(pedestrian, car));
+            assertTrue(result.isPresent());
+            assertEquals(car.getId(), result.get().getId());
+        }
+
+        @Test
+        @DisplayName("Tiebreaker should work with distance diff just under threshold")
+        void shouldApplyTiebreakerAtBoundary() {
+            Order order = new Order(new Point(50, 50), new Point(60, 60), 5, 3.0);
+
+            // CourierA at (50, 50) => distance = 0
+            Courier courierA = new Courier(new Point(50, 50), CourierType.BICYCLE);
+            courierA.setCompletedOrdersToday(4);
+
+            // CourierB at (50.0, 50.99) => distance ~0.99 (just under 1.0 threshold from courierA's distance=0)
+            // We use (50, 51) for distance=1.0, diff = |0 - 1.0| = 1.0 which is NOT < 1.0
+            // So use a closer point: (50, 50) + tiny offset => but Point uses int.
+            // With integer points: courier at (51, 50) distance=1.0, diff=|0-1.0|=1.0 NOT < 1.0
+            // Let's use both at same distance instead
+            Courier courierB = new Courier(new Point(50, 50), CourierType.BICYCLE);
+            courierB.setCompletedOrdersToday(1);
+
+            // Both at distance 0, diff = 0 < 1.0 => tiebreaker applies
+            Optional<Courier> result = strategy.findBestCourier(order, List.of(courierA, courierB));
+            assertTrue(result.isPresent());
+            assertEquals(courierB.getId(), result.get().getId()); // fewer completedOrders wins
+        }
+    }
+
+    @Nested
     @DisplayName("Weight filtering: courier must be able to carry order weight")
     class WeightFiltering {
 

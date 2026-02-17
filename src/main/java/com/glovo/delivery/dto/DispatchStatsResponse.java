@@ -9,6 +9,7 @@ public class DispatchStatsResponse {
     private long totalCouriers;
     private Map<String, Long> couriersByStatus;
     private long totalAssignments;
+    private int queuedOrders;
 
     public DispatchStatsResponse() {
     }
@@ -51,5 +52,13 @@ public class DispatchStatsResponse {
 
     public void setTotalAssignments(long totalAssignments) {
         this.totalAssignments = totalAssignments;
+    }
+
+    public int getQueuedOrders() {
+        return queuedOrders;
+    }
+
+    public void setQueuedOrders(int queuedOrders) {
+        this.queuedOrders = queuedOrders;
     }
 }

@@ -2,7 +2,6 @@ package com.glovo.delivery.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.glovo.delivery.dto.CreateOrderRequest;
-import com.glovo.delivery.exception.NoCouriersAvailableException;
 import com.glovo.delivery.exception.OrderNotFoundException;
 import com.glovo.delivery.model.Order;
 import com.glovo.delivery.model.Point;
@@ -109,9 +108,10 @@ class OrderControllerTest {
         }
 
         @Test
-        void shouldReturn503WhenNoCouriersAvailable() throws Exception {
-            when(orderService.createOrder(any()))
-                    .thenThrow(new NoCouriersAvailableException("No couriers available"));
+        void shouldReturn201WithQueuedStatusWhenNoCouriersAvailable() throws Exception {
+            Order order = new Order(new Point(10, 20), new Point(80, 90), 5, 3.0);
+            order.setStatus(OrderStatus.QUEUED);
+            when(orderService.createOrder(any())).thenReturn(order);
 
             CreateOrderRequest request = new CreateOrderRequest(
                     new Point(10, 20), new Point(80, 90), 5, 3.0);
@@ -119,8 +119,8 @@ class OrderControllerTest {
             mockMvc.perform(post("/api/orders")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isServiceUnavailable())
-                    .andExpect(jsonPath("$.message").value("No couriers available"));
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.status").value("QUEUED"));
         }
 
         @Test

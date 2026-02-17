@@ -142,12 +142,58 @@ class CourierTest {
         }
     }
 
+    @Nested
+    @DisplayName("Completed orders today")
+    class CompletedOrdersToday {
+
+        @Test
+        void shouldDefaultToZero() {
+            Courier courier = new Courier(new Point(10, 20), CourierType.BICYCLE);
+            assertEquals(0, courier.getCompletedOrdersToday());
+        }
+
+        @Test
+        void shouldDefaultToZeroWithDefaultConstructor() {
+            Courier courier = new Courier();
+            assertEquals(0, courier.getCompletedOrdersToday());
+        }
+
+        @Test
+        void shouldIncrement() {
+            Courier courier = new Courier(new Point(10, 20), CourierType.BICYCLE);
+            courier.incrementCompletedOrdersToday();
+            assertEquals(1, courier.getCompletedOrdersToday());
+            courier.incrementCompletedOrdersToday();
+            assertEquals(2, courier.getCompletedOrdersToday());
+        }
+
+        @Test
+        void shouldReset() {
+            Courier courier = new Courier(new Point(10, 20), CourierType.BICYCLE);
+            courier.incrementCompletedOrdersToday();
+            courier.incrementCompletedOrdersToday();
+            courier.incrementCompletedOrdersToday();
+            assertEquals(3, courier.getCompletedOrdersToday());
+
+            courier.resetCompletedOrdersToday();
+            assertEquals(0, courier.getCompletedOrdersToday());
+        }
+
+        @Test
+        void shouldSetArbitraryValue() {
+            Courier courier = new Courier(new Point(10, 20), CourierType.BICYCLE);
+            courier.setCompletedOrdersToday(7);
+            assertEquals(7, courier.getCompletedOrdersToday());
+        }
+    }
+
     @Test
     void toStringShouldContainTypeAndStatus() {
         Courier courier = new Courier(new Point(25, 50), CourierType.BICYCLE);
         String str = courier.toString();
         assertTrue(str.contains("BICYCLE"));
         assertTrue(str.contains("FREE"));
+        assertTrue(str.contains("completedToday=0"));
     }
 
     @Test

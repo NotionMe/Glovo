@@ -1,7 +1,6 @@
 package com.glovo.delivery.service;
 
 import com.glovo.delivery.dto.DispatchStatsResponse;
-import com.glovo.delivery.exception.NoCouriersAvailableException;
 import com.glovo.delivery.model.Courier;
 import com.glovo.delivery.model.Order;
 import com.glovo.delivery.model.Point;
@@ -92,25 +91,29 @@ class DispatchServiceTest {
         }
 
         @Test
-        @DisplayName("Should throw NoCouriersAvailableException when no free couriers")
-        void shouldThrowWhenNoCouriersAvailable() {
+        @DisplayName("Should enqueue order when no free couriers (instead of throwing)")
+        void shouldEnqueueWhenNoCouriersAvailable() {
             when(courierRepository.findFree()).thenReturn(Collections.emptyList());
             when(matchingStrategy.findBestCourier(any(), any())).thenReturn(Optional.empty());
             when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
 
-            assertThrows(NoCouriersAvailableException.class,
-                    () -> dispatchService.dispatch(testOrder));
+            dispatchService.dispatch(testOrder);
+
+            assertEquals(OrderStatus.QUEUED, testOrder.getStatus());
+            assertEquals(1, dispatchService.getQueueSize());
         }
 
         @Test
-        @DisplayName("Should throw when strategy returns empty (all couriers filtered out)")
-        void shouldThrowWhenStrategyReturnsEmpty() {
+        @DisplayName("Should enqueue order when strategy returns empty (all couriers filtered out)")
+        void shouldEnqueueWhenStrategyReturnsEmpty() {
             when(courierRepository.findFree()).thenReturn(List.of(testCourier));
             when(matchingStrategy.findBestCourier(any(), any())).thenReturn(Optional.empty());
             when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
 
-            assertThrows(NoCouriersAvailableException.class,
-                    () -> dispatchService.dispatch(testOrder));
+            dispatchService.dispatch(testOrder);
+
+            assertEquals(OrderStatus.QUEUED, testOrder.getStatus());
+            assertEquals(1, dispatchService.getQueueSize());
         }
     }
 
@@ -134,6 +137,57 @@ class DispatchServiceTest {
             assertEquals(OrderStatus.COMPLETED, result.getStatus());
             assertEquals(CourierStatus.FREE, testCourier.getStatus());
             verify(courierRepository).save(testCourier);
+        }
+
+        @Test
+        @DisplayName("Should increment completedOrdersToday when completing order")
+        void shouldIncrementCompletedOrdersToday() {
+            testOrder.setStatus(OrderStatus.ASSIGNED);
+            testOrder.setAssignedCourierId(testCourier.getId());
+            testCourier.setStatus(CourierStatus.BUSY);
+            assertEquals(0, testCourier.getCompletedOrdersToday());
+
+            when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
+            when(courierRepository.findById(testCourier.getId())).thenReturn(Optional.of(testCourier));
+            when(courierRepository.save(any(Courier.class))).thenReturn(testCourier);
+
+            dispatchService.completeOrder(testOrder);
+
+            assertEquals(1, testCourier.getCompletedOrdersToday());
+        }
+
+        @Test
+        @DisplayName("Should process queue after completing order")
+        void shouldProcessQueueAfterComplete() {
+            // First: enqueue an order (no couriers available)
+            Order queuedOrder = new Order(new Point(10, 10), new Point(20, 20), 3, 2.0);
+            when(courierRepository.findFree()).thenReturn(Collections.emptyList());
+            when(matchingStrategy.findBestCourier(any(), any())).thenReturn(Optional.empty());
+            when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            dispatchService.dispatch(queuedOrder);
+            assertEquals(1, dispatchService.getQueueSize());
+            assertEquals(OrderStatus.QUEUED, queuedOrder.getStatus());
+
+            // Now: complete the testOrder, which frees testCourier
+            testOrder.setStatus(OrderStatus.ASSIGNED);
+            testOrder.setAssignedCourierId(testCourier.getId());
+            testCourier.setStatus(CourierStatus.BUSY);
+
+            when(courierRepository.findById(testCourier.getId())).thenReturn(Optional.of(testCourier));
+            when(courierRepository.save(any(Courier.class))).thenReturn(testCourier);
+            // After freeing: processQueue finds free courier
+            when(courierRepository.findFree()).thenReturn(List.of(testCourier));
+            when(orderRepository.findById(queuedOrder.getId())).thenReturn(Optional.of(queuedOrder));
+            when(matchingStrategy.findBestCourier(eq(queuedOrder), any()))
+                    .thenReturn(Optional.of(testCourier));
+
+            dispatchService.completeOrder(testOrder);
+
+            // The queued order should now be assigned
+            assertEquals(OrderStatus.ASSIGNED, queuedOrder.getStatus());
+            assertEquals(testCourier.getId(), queuedOrder.getAssignedCourierId());
+            assertEquals(0, dispatchService.getQueueSize());
         }
 
         @Test
@@ -161,6 +215,14 @@ class DispatchServiceTest {
         }
 
         @Test
+        @DisplayName("Should throw when completing QUEUED order")
+        void shouldThrowWhenCompletingQueuedOrder() {
+            testOrder.setStatus(OrderStatus.QUEUED);
+            assertThrows(IllegalStateException.class,
+                    () -> dispatchService.completeOrder(testOrder));
+        }
+
+        @Test
         @DisplayName("Should handle null assignedCourierId gracefully")
         void shouldHandleNullCourierId() {
             testOrder.setStatus(OrderStatus.ASSIGNED);
@@ -178,7 +240,7 @@ class DispatchServiceTest {
     class GetStats {
 
         @Test
-        @DisplayName("Should return correct statistics")
+        @DisplayName("Should return correct statistics including queuedOrders")
         void shouldReturnStats() {
             when(orderRepository.count()).thenReturn(5L);
             when(courierRepository.count()).thenReturn(8L);
@@ -189,7 +251,8 @@ class DispatchServiceTest {
 
             assertEquals(5, stats.getTotalOrders());
             assertEquals(8, stats.getTotalCouriers());
-            assertEquals(0, stats.getTotalAssignments()); // no dispatches done yet
+            assertEquals(0, stats.getTotalAssignments());
+            assertEquals(0, stats.getQueuedOrders());
             assertNotNull(stats.getOrdersByStatus());
             assertNotNull(stats.getCouriersByStatus());
             assertEquals(OrderStatus.values().length, stats.getOrdersByStatus().size());
