@@ -29,11 +29,13 @@ public class OrderService {
         Order order = new Order(
                 request.getPickupLocation(),
                 request.getDeliveryLocation(),
-                request.getPriority()
+                request.getPriority(),
+                request.getWeightKg()
         );
 
         order = orderRepository.save(order);
-        log.info("Order created: {} with priority {}", order.getId(), order.getPriority());
+        log.info("Order created: {} with priority {}, weight {}kg",
+                order.getId(), order.getPriority(), order.getWeightKg());
 
         // Trigger dispatch (search for courier)
         dispatchService.dispatch(order);

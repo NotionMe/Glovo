@@ -12,6 +12,7 @@ public class Order {
     private Point deliveryLocation;
     private OrderStatus status;
     private int priority;
+    private double weightKg;
     private long createdAt;
     private UUID assignedCourierId;
 
@@ -21,12 +22,14 @@ public class Order {
         this.createdAt = System.currentTimeMillis();
     }
 
-    public Order(Point pickupLocation, Point deliveryLocation, int priority) {
+    public Order(Point pickupLocation, Point deliveryLocation, int priority, double weightKg) {
         this();
         validatePriority(priority);
+        validateWeight(weightKg);
         this.pickupLocation = pickupLocation;
         this.deliveryLocation = deliveryLocation;
         this.priority = priority;
+        this.weightKg = weightKg;
     }
 
     public UUID getId() {
@@ -70,6 +73,15 @@ public class Order {
         this.priority = priority;
     }
 
+    public double getWeightKg() {
+        return weightKg;
+    }
+
+    public void setWeightKg(double weightKg) {
+        validateWeight(weightKg);
+        this.weightKg = weightKg;
+    }
+
     public long getCreatedAt() {
         return createdAt;
     }
@@ -92,6 +104,12 @@ public class Order {
         }
     }
 
+    private static void validateWeight(double weightKg) {
+        if (weightKg <= 0) {
+            throw new IllegalArgumentException("Weight must be greater than 0. Got: " + weightKg);
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -107,6 +125,7 @@ public class Order {
 
     @Override
     public String toString() {
-        return "Order{id=" + id + ", status=" + status + ", priority=" + priority + "}";
+        return "Order{id=" + id + ", status=" + status + ", priority=" + priority +
+                ", weightKg=" + weightKg + "}";
     }
 }
